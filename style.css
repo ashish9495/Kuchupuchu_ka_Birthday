@@ -631,7 +631,9 @@ body.music-on .tonearm { transform: rotate(26deg); }
 .seat-back { position: absolute; left: 0; top: 30%; width: 100%; height: 75%; border-radius: 36px 36px 0 0; background: #e36a91; box-shadow: inset 0 0 0 5px rgba(255,255,255,.18); }
 .passenger-svg { position: absolute; inset: 0; width: 100%; height: 100%; transform-origin: 50% 100%; animation: ride 2.8s ease-in-out infinite; }
 
-.drive-steps { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.drive-steps { display: flex; gap: 8px; width: min(1000px, 100%); overflow-x: auto; padding: 4px 2px 8px; scrollbar-width: none; }
+.drive-steps::-webkit-scrollbar { display: none; }
+.drive-step { flex: none; white-space: nowrap; }
 .drive-step {
   display: flex; align-items: center; gap: 6px;
   padding: .4em .9em; border-radius: 999px;
@@ -643,6 +645,37 @@ body.music-on .tonearm { transform: rotate(26deg); }
 .drive-step.active { background: var(--pink-400); color: #fff; border-color: var(--pink-400); transform: scale(1.06); }
 .drive-hint { color: var(--pink-200); font-size: .85rem; animation: hintBounce 2s ease-in-out infinite; transition: opacity .5s; }
 .drive-hint.hide { opacity: 0; }
+
+
+/* ---- world-tour destinations (built by buildDestinations in script.js) ---- */
+.dest .landmark { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 90%;
+  transform: translateX(calc((0.5 - var(--lp, .5)) * 9%)); transition: transform .2s linear; }
+.dest .track-far { height: 58%; opacity: .75; }
+.dest .track-near { height: 70%; z-index: 2; }
+.dest-orb { position: absolute; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; }
+.dest-orb.orb-sun { background: #fff3c4; box-shadow: 0 0 40px 14px rgba(255,230,160,.55); }
+.dest-orb.orb-sun.big { width: 90px; height: 90px; margin: -45px 0 0 -45px; background: #ffe7a0; }
+.dest-orb.orb-moon { background: #fff4d6; box-shadow: 0 0 34px 8px rgba(255,240,200,.35); }
+.dest-stars { position: absolute; inset: 0; }
+.dest-fx { position: absolute; inset: 0; z-index: 3; pointer-events: none; overflow: hidden; }
+.dest-fx i { position: absolute; display: block; }
+.fx-snow i { width: 5px; height: 5px; border-radius: 50%; background: #fff; animation: fxFall var(--d) linear infinite; }
+.fx-petals i { width: 8px; height: 6px; border-radius: 70% 0 70% 0; background: #ffc2d6; animation: fxPetal var(--d) linear infinite; }
+.fx-sand i { width: 3px; height: 3px; border-radius: 50%; background: #fff0c8; opacity: .7; animation: fxSand var(--d) linear infinite; }
+.fx-rain i { width: 1.5px; height: 14px; background: rgba(220,235,255,.6); animation: fxRain var(--d) linear infinite; }
+.fx-stars i, .fx-sparkle i { width: 3px; height: 3px; border-radius: 50%; background: #fff; box-shadow: 0 0 6px #fff; animation: twinkle var(--d) ease-in-out infinite; }
+.fx-sparkle i { background: #ffe27a; box-shadow: 0 0 8px #ffd27a; }
+.fx-fireflies i { width: 4px; height: 4px; border-radius: 50%; background: #fff6a8; box-shadow: 0 0 8px 2px rgba(255,240,140,.7); animation: fxFly var(--d) ease-in-out infinite alternate; }
+.dest .smoke { animation: smokeUp 3s ease-in-out infinite; }
+.dest .beams { animation: tvFlicker 2.4s ease-in-out infinite; }
+.dest .bulb-v { animation: twinkle 1s ease-in-out infinite; }
+.dest .bulb-v:nth-child(even) { animation-delay: .5s; }
+@keyframes fxFall { to { transform: translate(-30px, 115vh); } }
+@keyframes fxPetal { 0% { transform: translate(0, 0) rotate(0); } 100% { transform: translate(-120px, 115vh) rotate(540deg); } }
+@keyframes fxSand { from { transform: translate(0, 60vh); } to { transform: translate(-80vw, 50vh); } }
+@keyframes fxRain { to { transform: translate(-20px, 115vh); } }
+@keyframes fxFly { from { transform: translate(0, 0); } to { transform: translate(24px, -18px); } }
+@keyframes smokeUp { 0% { opacity: 0; transform: translateY(6px); } 40% { opacity: .8; } 100% { opacity: 0; transform: translateY(-14px); } }
 
 /* ============ 6. SECTION 4 · SUGARLESS CAFÉ ============ */
 .scene-cafe { background: linear-gradient(180deg, #ffd6e5 0%, #fff0f5 40%, #fff 100%); }
@@ -824,7 +857,7 @@ body.music-on .tonearm { transform: rotate(26deg); }
 .curtain.left { left: 0; border-radius: 0 0 60% 0; } .curtain.right { right: 0; border-radius: 0 0 0 60%; }
 
 .wall-frame { right: 5%; top: 11%; width: 12%; aspect-ratio: 4 / 5; padding: .6%; padding-bottom: 2.4%; background: #fff; box-shadow: 0 8px 18px rgba(0,0,0,.15); transform: rotate(4deg); z-index: 2; }
-.wall-frame img { width: 100%; height: 100%; object-fit: cover; }
+.wall-frame img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 35%; }
 .frame-fallback { display: none; }
 .wall-frame.img-missing img { display: none; }
 .wall-frame.img-missing .frame-fallback { display: grid; place-items: center; width: 100%; height: 100%; background: var(--pink-100); color: var(--pink-500); font-size: 2rem; font-family: var(--font-cute); line-height: 1; }
@@ -1532,7 +1565,6 @@ body.lb-open { overflow: hidden; }
   .speech-bubble::before { left: 50%; top: -18px; transform: translateX(-50%) rotate(135deg); }
   .apology-actions { justify-content: center; }
 
-  .scene-drive { height: 420vh; }
   .drive-sticky { padding-top: 70px; gap: 12px; }
   .car-view { aspect-ratio: 3 / 4; max-height: 60vh; border-radius: 30px; }
   .window-frame { left: 6%; right: 6%; top: 6%; bottom: 22%; border-radius: 26px; }

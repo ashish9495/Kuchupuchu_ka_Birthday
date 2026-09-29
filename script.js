@@ -1290,12 +1290,246 @@ function initDoor() {
    The section is 460vh tall with a sticky 100vh view inside. Scroll
    progress (0 → 1) picks which of the 4 sceneries is showing.
    ========================================================================== */
+/* ==========================================================================
+   9a. MIDNIGHT DRIVE — WORLD TOUR DESTINATIONS
+   --------------------------------------------------------------------------
+   Every stop is built from one entry in DESTINATIONS:
+     sky     : 3 colours, top → horizon
+     orb     : 'sun' | 'moon' | null, plus where it sits
+     far     : distant backdrop (skyline / hills / none)
+     landmark: the drawing in the middle (400 × 240 box, ground at y = 200;
+                the box extends to x = -200 … 600 so wide screens stay filled)
+     near    : what whizzes past the window ('palms' | 'pines' | 'lamps' | 'cypress' | 'none')
+     fx      : little particles ('snow' | 'petals' | 'sand' | 'stars' | 'rain' | 'sparkle' | 'fireflies')
+   The ORDER of the whole trip is DRIVE_SCENES (just below).
+   ========================================================================== */
 const DRIVE_SCENES = [
-  { key: 'city',   step: 'City',   title: 'Blurry City Lights 🌃',   sub: 'just you, me & a playlist' },
-  { key: 'aurora', step: 'Norway', title: 'The Northern Lights 🌌',  sub: 'the sky is dancing — for you' },
-  { key: 'paris',  step: 'Paris',  title: 'The Streets of Paris 🗼', sub: 'bonjour, ma chérie' },
-  { key: 'nyc',    step: 'NYC',    title: 'Times Square, Baby 🗽',   sub: 'your name in lights (rich-girl era loading 💸)' },
+  { key: 'city',       step: 'Our City',   title: 'Blurry City Lights 🌃',          sub: 'just you, me & a playlist' },
+  { key: 'taj',        step: 'Taj Mahal',  title: 'The Taj Mahal 🕌',               sub: 'a whole monument for love — but mine is for you' },
+  { key: 'hyderabad',  step: 'Hyderabad',  title: 'Charminar, Hyderabad 🌙',        sub: 'biryani stop? obviously 🍛' },
+  { key: 'goa',        step: 'Goa',        title: 'Sunset in Goa 🏖️',               sub: 'sea breeze, your hair everywhere, perfect' },
+  { key: 'trivandrum', step: 'Thiruvananthapuram', title: 'Thiruvananthapuram 🌴',  sub: "God's own country, with my own angel" },
+  { key: 'manali',     step: 'Manali',     title: 'Snowy Manali ❄️',                sub: 'cold hands, warm heart — hold mine' },
+  { key: 'aurora',     step: 'Norway',     title: 'The Northern Lights 🌌',         sub: 'the sky is dancing — for you' },
+  { key: 'london',     step: 'London',     title: 'Hello, London 💂',               sub: 'tea for two, rain for free' },
+  { key: 'manchester', step: 'Manchester', title: 'Manchester Nights ⚽',            sub: 'you’re my forever home team' },
+  { key: 'paris',      step: 'Paris',      title: 'The Streets of Paris 🗼',        sub: 'bonjour, ma chérie' },
+  { key: 'germany',    step: 'Germany',    title: 'A Fairytale Castle, Germany 🏰', sub: 'every princess needs a castle' },
+  { key: 'italy',      step: 'Italy',      title: 'Ciao, Italia 🍕',                sub: 'pasta, gelato & you (in that order… kidding, you first)' },
+  { key: 'barcelona',  step: 'Barcelona',  title: 'Barcelona Sunshine 🇪🇸',          sub: 'tapas, sangria vibes & the prettiest girl in Spain' },
+  { key: 'egypt',      step: 'Egypt',      title: 'The Pyramids of Egypt 🐫',       sub: 'ancient wonders, but you’re the real one' },
+  { key: 'tokyo',      step: 'Tokyo',      title: 'Tokyo in Bloom 🌸',              sub: 'sakura season — Ghibli would be proud' },
+  { key: 'seoul',      step: 'Seoul',      title: 'Seoul at Night 🇰🇷',             sub: 'our own K-drama, episode forever' },
+  { key: 'bali',       step: 'Bali',       title: 'Bali Paradise 🌺',               sub: 'rice terraces, sunsets & slow love' },
+  { key: 'la',         step: 'Los Angeles', title: 'Los Angeles 🌴',                sub: 'palm trees & movie-star energy (that’s you)' },
+  { key: 'vegas',      step: 'Las Vegas',  title: 'Viva Las Vegas 🎰',              sub: 'I already hit the jackpot — it’s you' },
+  { key: 'nyc',        step: 'NYC',        title: 'Times Square, Baby 🗽',          sub: 'your name in lights (rich-girl era loading 💸)' },
 ];
+
+/* ---- roadside things that whizz past (1000 × 300 strips) ---- */
+function palmsSVG(c = '#1f3a2a') {
+  const palm = x => `<g transform="translate(${x} 300)"><path d="M0 0 Q-6 -90 8 -170" stroke="${c}" stroke-width="7" fill="none"/>
+    ${[-150, -110, -60, -20, 25].map(a => `<path d="M8 -170 q${Math.cos(a * Math.PI / 180) * 40} ${Math.sin(a * Math.PI / 180) * 30 - 5} ${Math.cos(a * Math.PI / 180) * 70} ${Math.sin(a * Math.PI / 180) * 30 + 28}" stroke="${c}" stroke-width="6" fill="none" stroke-linecap="round"/>`).join('')}</g>`;
+  return `<svg viewBox="0 0 1000 300" preserveAspectRatio="xMidYMax slice" aria-hidden="true">${[90, 420, 760].map(palm).join('')}</svg>`;
+}
+function pinesSVG(c = '#1b3a32', snow = false) {
+  const pine = (x, s) => `<g transform="translate(${x} 300) scale(${s})"><rect x="-4" y="-20" width="8" height="20" fill="#3b2a22"/>
+    <path d="M0 -150 L-34 -70 L-18 -70 L-44 -20 L44 -20 L18 -70 L34 -70 Z" fill="${c}"/>${snow ? '<path d="M0 -150 L-14 -118 L14 -118 Z M-24 -72 L-16 -70 L0 -84 L16 -70 L24 -72 L18 -76 L0 -92 L-18 -76 Z" fill="#f4fbff"/>' : ''}</g>`;
+  return `<svg viewBox="0 0 1000 300" preserveAspectRatio="xMidYMax slice" aria-hidden="true">${[[70, 1], [230, .8], [520, 1.1], [700, .85], [900, 1]].map(([x, s]) => pine(x, s)).join('')}</svg>`;
+}
+function cypressSVG(c = '#2f4a2a') {
+  const cy = x => `<path transform="translate(${x} 300)" d="M0 0 Q-16 -60 -10 -120 Q-4 -180 0 -200 Q4 -180 10 -120 Q16 -60 0 0 Z" fill="${c}"/>`;
+  return `<svg viewBox="0 0 1000 300" preserveAspectRatio="xMidYMax slice" aria-hidden="true">${[120, 170, 560, 610, 880].map(cy).join('')}</svg>`;
+}
+function hillsSVG(c1, c2) {
+  return `<svg viewBox="0 0 1000 300" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <path d="M0 300 L0 190 Q120 120 260 180 Q400 110 540 170 Q700 100 840 175 Q930 140 1000 170 L1000 300 Z" fill="${c1}"/>
+    <path d="M0 300 L0 240 Q160 190 320 235 Q500 185 680 230 Q840 195 1000 225 L1000 300 Z" fill="${c2}"/></svg>`;
+}
+const NEAR = { palms: palmsSVG, pines: pinesSVG, cypress: cypressSVG, lamps: () => lampsSVG(), none: () => '' };
+
+/* ---- the landmarks (400 × 240, ground line y = 200) ---- */
+const tiers = (cx, y0, y1, w0, w1, n, fill, line) => {
+  let s = '';
+  for (let i = 0; i < n; i++) {
+    const ya = y0 - (y0 - y1) * i / n, yb = y0 - (y0 - y1) * (i + 1) / n;
+    const wa = w0 - (w0 - w1) * i / n, wb = w0 - (w0 - w1) * (i + 1) / n;
+    s += `<path d="M${cx - wa / 2} ${ya} L${cx - wb / 2} ${yb + 2} L${cx + wb / 2} ${yb + 2} L${cx + wa / 2} ${ya} Z" fill="${fill}" stroke="${line}" stroke-width="1"/>`;
+    s += `<path d="M${cx - wa / 2 + 3} ${ya - 3} H${cx + wa / 2 - 3}" stroke="${line}" stroke-width="1.4" stroke-dasharray="3 3"/>`;
+  }
+  return s;
+};
+const arches = (x0, x1, y, h, n, fill) => { let s = ''; const w = (x1 - x0) / n; for (let i = 0; i < n; i++) { const x = x0 + i * w; s += `<path d="M${x + w * .2} ${y} V${y - h * .55} Q${x + w / 2} ${y - h} ${x + w * .8} ${y - h * .55} V${y} Z" fill="${fill}"/>`; } return s; };
+const palm = (x, y, s, c) => `<g transform="translate(${x} ${y}) scale(${s})"><path d="M0 0 Q-4 -40 6 -80" stroke="${c}" stroke-width="4" fill="none"/>${[-160, -120, -70, -25, 20].map(a => `<path d="M6 -80 q${Math.cos(a * Math.PI / 180) * 18} ${Math.sin(a * Math.PI / 180) * 14 - 2} ${Math.cos(a * Math.PI / 180) * 34} ${Math.sin(a * Math.PI / 180) * 14 + 14}" stroke="${c}" stroke-width="3.4" fill="none" stroke-linecap="round"/>`).join('')}</g>`;
+
+const DESTINATIONS = {
+  taj: { sky: ['#ffd1dc', '#ffe3c8', '#fff4e0'], orb: 'sun', orbPos: [18, 22], far: hillsSVG('#f2c9b8', '#e8b9a6'), near: 'cypress', fx: 'fireflies',
+    landmark: `<rect x="-200" y="200" width="800" height="40" fill="#8cc28a"/><rect x="186" y="200" width="28" height="40" fill="#bfe4f2"/>
+      <g opacity=".35" transform="translate(0 400) scale(1 -1)"><path d="M186 200 H214 V195 Q214 160 200 150 Q186 160 186 195 Z" fill="#fff"/></g>
+      <rect x="110" y="182" width="180" height="18" fill="#f1e8dc"/>
+      ${[122, 278].map(x => `<rect x="${x - 4}" y="92" width="8" height="90" fill="#fbf6ee" stroke="#e3d3c3"/><path d="M${x - 4} 120 h8 M${x - 4} 150 h8" stroke="#e3d3c3"/><path d="M${x - 7} 94 Q${x} 76 ${x + 7} 94 Z" fill="#fbf6ee" stroke="#e3d3c3"/><path d="M${x} 76 v-6" stroke="#d9b56a" stroke-width="1.5"/>`).join('')}
+      <rect x="150" y="122" width="100" height="60" fill="#fbf6ee" stroke="#e3d3c3"/>
+      <path d="M186 182 V148 Q200 128 214 148 V182 Z" fill="#e6d8c8"/>${arches(152, 184, 180, 26, 2, '#ece0d2')}${arches(216, 248, 180, 26, 2, '#ece0d2')}
+      ${[165, 235].map(x => `<path d="M${x - 10} 122 Q${x - 10} 104 ${x} 100 Q${x + 10} 104 ${x + 10} 122 Z" fill="#fffaf2" stroke="#e3d3c3"/><path d="M${x} 100 v-6" stroke="#d9b56a" stroke-width="1.4"/>`).join('')}
+      <rect x="182" y="112" width="36" height="12" fill="#fbf6ee" stroke="#e3d3c3"/>
+      <path d="M170 114 Q166 70 200 58 Q234 70 230 114 Z" fill="#fffaf2" stroke="#e3d3c3"/><path d="M200 58 V38" stroke="#d9b56a" stroke-width="2"/><circle cx="200" cy="44" r="2.5" fill="#d9b56a"/>` },
+
+  hyderabad: { sky: ['#3b2a6a', '#b0548a', '#ffb08a'], orb: 'moon', orbPos: [78, 16], far: `SKY:${JSON.stringify({ fill: '#5a3a6a', windows: ['#ffd98a'], minH: 60, maxH: 130, winChance: .35 })}`, near: 'lamps', fx: 'stars',
+    landmark: `<rect x="-200" y="200" width="800" height="40" fill="#6a4a5a"/>
+      <rect x="140" y="110" width="120" height="90" fill="#e3bf94"/><path d="M174 200 V150 Q200 116 226 150 V200 Z" fill="#6a3a3a"/>
+      <rect x="140" y="98" width="120" height="14" fill="#d8ae80"/>${arches(146, 254, 98, 14, 9, '#8a5a4a')}
+      <path d="M186 98 Q186 84 200 80 Q214 84 214 98 Z" fill="#e8c9a0"/>
+      ${[140, 260].map(x => `<rect x="${x - 8}" y="40" width="16" height="160" fill="#e8c69c" stroke="#c99a6a"/>${[110, 80, 56].map(y => `<rect x="${x - 11}" y="${y}" width="22" height="5" rx="2" fill="#c99a6a"/>`).join('')}<path d="M${x - 8} 42 Q${x} 26 ${x + 8} 42 Z" fill="#e8c69c" stroke="#c99a6a"/><path d="M${x} 26 v-6" stroke="#c99a6a" stroke-width="1.5"/>`).join('')}
+      ${[60, 330].map(x => `<rect x="${x}" y="178" width="30" height="22" fill="#ff8db4"/><path d="M${x - 4} 178 L${x + 15} 166 L${x + 34} 178 Z" fill="#ffc928"/>`).join('')}` },
+
+  goa: { sky: ['#ff7aa2', '#ffb27a', '#ffe0a8'], orb: 'sun', orbPos: [50, 52], orbBig: true, far: '', near: 'palms', fx: 'sparkle',
+    landmark: `<rect x="-200" y="150" width="800" height="55" fill="#4a8fc4"/><path d="M-200 162 H600 M-200 176 H600 M-200 190 H600" stroke="#fff" stroke-width="1.4" stroke-dasharray="14 18" opacity=".5"/>
+      <path d="M175 150 H225 L235 205 H165 Z" fill="#ffd28a" opacity=".45"/>
+      <path d="M-200 198 Q100 190 200 198 Q300 206 600 196 V240 H-200 Z" fill="#f7d9a3"/>
+      ${palm(70, 210, 1.3, '#3a2a2a')}${palm(330, 214, 1.1, '#3a2a2a')}
+      <g transform="translate(250 196)"><path d="M0 0 V-34" stroke="#fff" stroke-width="2"/><path d="M-26 -30 Q0 -52 26 -30 Z" fill="#ff5f9a"/><path d="M-26 -30 Q-13 -36 0 -30 Q13 -36 26 -30" fill="#fff" opacity=".5"/></g>
+      <path d="M110 142 q6 -5 12 0 q6 -5 12 0 M150 128 q5 -4 10 0 q5 -4 10 0" stroke="#3a2a3a" stroke-width="1.6" fill="none"/>` },
+
+  trivandrum: { sky: ['#8fd3e8', '#c6ecd8', '#fff3cf'], orb: 'sun', orbPos: [80, 18], far: hillsSVG('#6db38a', '#4f9a6e'), near: 'palms', fx: 'fireflies',
+    landmark: `<rect x="-200" y="200" width="800" height="40" fill="#3f8f6a"/><rect x="-200" y="206" width="800" height="34" fill="#5fa8b8"/>
+      ${tiers(200, 196, 52, 110, 46, 7, '#e8c9a0', '#b8865a')}
+      <rect x="182" y="170" width="36" height="30" fill="#6a3a2a"/><path d="M182 170 Q200 156 218 170" fill="#6a3a2a"/>
+      ${[184, 200, 216].map(x => `<path d="M${x} 52 v-10" stroke="#d9a53a" stroke-width="3" stroke-linecap="round"/><circle cx="${x}" cy="40" r="3" fill="#e9b949"/>`).join('')}
+      <path d="M150 52 H250" stroke="#b8865a" stroke-width="3"/>
+      <g transform="translate(40 214)"><path d="M0 0 Q40 12 80 0 L74 -8 H6 Z" fill="#7a4a2a"/><path d="M12 -8 Q40 -30 68 -8 Z" fill="#c99a5a"/><path d="M20 -8 V-18 M40 -8 V-22 M60 -8 V-18" stroke="#7a4a2a"/></g>
+      ${palm(330, 204, 1.4, '#2a4a2a')}${palm(365, 206, 1.1, '#2a4a2a')}` },
+
+  manali: { sky: ['#6fb3ea', '#b8def7', '#eef8ff'], orb: 'sun', orbPos: [16, 16], far: `MOUNT`, near: 'pines', nearSnow: true, fx: 'snow',
+    landmark: `<path d="M-200 200 L-200 130 L-120 70 L-50 115 L0 100 L70 40 L120 90 L190 20 L260 95 L320 50 L400 120 L470 60 L540 110 L600 90 L600 200 Z" fill="#8aa3c4"/><path d="M-120 70 L-134 86 L-112 84 Z M470 60 L456 78 L478 76 Z" fill="#fff"/>
+      <path d="M70 40 L52 58 L66 60 L76 52 L88 60 Z M190 20 L166 50 L182 48 L192 40 L206 50 L216 44 Z M320 50 L302 68 L316 68 L326 60 L338 66 Z" fill="#fff"/>
+      <path d="M-200 190 Q-100 170 0 188 Q100 160 200 184 Q300 164 400 180 Q500 168 600 186 V240 H-200 Z" fill="#f4fbff"/>
+      <g transform="translate(260 196)"><rect x="-30" y="-32" width="60" height="32" fill="#8a5a3a"/><path d="M-38 -30 L0 -58 L38 -30 Z" fill="#6a3a2a"/><path d="M-38 -30 L0 -58 L38 -30 L32 -34 L0 -52 L-32 -34 Z" fill="#fff"/>
+        <rect x="-18" y="-24" width="12" height="12" fill="#ffd27a"/><rect x="8" y="-20" width="12" height="20" fill="#5a3a2a"/><rect x="14" y="-66" width="8" height="20" fill="#5a3a2a"/>
+        <path class="smoke" d="M18 -70 q-6 -8 0 -16 q6 -8 0 -16" stroke="#fff" stroke-width="4" fill="none" opacity=".8" stroke-linecap="round"/></g>` },
+
+  london: { sky: ['#4a5b8a', '#8a8fb8', '#e8c4d0'], orb: 'moon', orbPos: [14, 16], far: `SKY:${JSON.stringify({ fill: '#5a5f7a', windows: ['#ffe2a8'], minH: 60, maxH: 150, winChance: .3 })}`, near: 'lamps', fx: 'rain',
+    landmark: `<rect x="-200" y="188" width="800" height="52" fill="#5a7a9a"/><path d="M-200 200 H600 M-200 214 H600" stroke="#fff" stroke-width="1" stroke-dasharray="10 16" opacity=".35"/>
+      <g transform="translate(90 150)"><circle r="62" fill="none" stroke="#e8eef8" stroke-width="3"/>${Array.from({ length: 12 }, (_, i) => { const a = i * Math.PI / 6; return `<path d="M0 0 L${(Math.cos(a) * 62).toFixed(1)} ${(Math.sin(a) * 62).toFixed(1)}" stroke="#e8eef8" stroke-width="1"/><ellipse cx="${(Math.cos(a) * 62).toFixed(1)}" cy="${(Math.sin(a) * 62).toFixed(1)}" rx="4" ry="3" fill="#bfe0ff"/>`; }).join('')}<path d="M0 0 L-24 58 M0 0 L24 58" stroke="#e8eef8" stroke-width="3"/></g>
+      <rect x="276" y="60" width="30" height="130" fill="#c9a86a"/><path d="M276 60 L291 20 L306 60 Z" fill="#6a5a3a"/><path d="M291 20 V8" stroke="#c9a86a" stroke-width="2"/>
+      <circle cx="291" cy="80" r="11" fill="#fff6d8" stroke="#6a5a3a" stroke-width="2"/><path d="M291 80 V73 M291 80 L296 82" stroke="#3a2a2a" stroke-width="1.5"/>
+      ${[100, 120, 140, 160].map(y => `<path d="M280 ${y} h22" stroke="#9a7a4a"/>`).join('')}
+      <rect x="310" y="120" width="70" height="70" fill="#b8985a"/>${arches(312, 378, 188, 20, 5, '#8a6a3a')}
+      <g transform="translate(160 184)"><rect x="0" y="-26" width="54" height="26" rx="4" fill="#e2242c"/><rect x="0" y="-38" width="54" height="13" rx="4" fill="#e2242c"/><path d="M4 -34 h46 M4 -20 h46" stroke="#bfe0ff" stroke-width="5" stroke-dasharray="8 3"/><circle cx="12" cy="1" r="4" fill="#222"/><circle cx="42" cy="1" r="4" fill="#222"/></g>` },
+
+  manchester: { sky: ['#2a2350', '#5a3a6a', '#c96a6a'], orb: 'moon', orbPos: [84, 14], far: `SKY:${JSON.stringify({ fill: '#7a3a30', windows: ['#ffd27a', '#ffb07a'], minH: 70, maxH: 160, winChance: .45 })}`, near: 'lamps', fx: 'stars',
+    landmark: `<rect x="-200" y="200" width="800" height="40" fill="#3a4a3a"/>
+      <g class="beams" opacity=".35"><path d="M110 60 L60 200 L160 200 Z M290 60 L240 200 L340 200 Z" fill="#fff6c8"/></g>
+      <path d="M90 200 L100 120 Q200 96 300 120 L310 200 Z" fill="#c8c8d8"/><path d="M104 130 Q200 108 296 130 L300 150 Q200 128 100 150 Z" fill="#c92a2a"/>
+      <path d="M100 150 Q200 128 300 150" stroke="#fff" stroke-width="2" fill="none"/>${arches(112, 288, 200, 30, 11, '#8a8aa0')}
+      <path d="M90 120 L200 92 L310 120" stroke="#8a8aa0" stroke-width="4" fill="none"/>
+      ${[110, 290].map(x => `<rect x="${x - 2}" y="56" width="4" height="70" fill="#9a9ab0"/><rect x="${x - 14}" y="48" width="28" height="12" fill="#fff6c8"/>`).join('')}
+      <rect x="20" y="130" width="14" height="70" fill="#8a3a2a"/><rect x="18" y="126" width="18" height="6" fill="#6a2a1a"/>
+      <g transform="translate(360 160)"><ellipse cx="0" cy="0" rx="9" ry="12" fill="#ffc928"/><path d="M-9 -3 H9 M-8 4 H8" stroke="#2a2a2a" stroke-width="3"/><ellipse cx="-9" cy="-10" rx="8" ry="5" fill="#fff" opacity=".8"/><ellipse cx="9" cy="-10" rx="8" ry="5" fill="#fff" opacity=".8"/></g>` },
+
+  germany: { sky: ['#a8c8f0', '#f3d6ec', '#fff0e0'], orb: 'sun', orbPos: [82, 20], far: hillsSVG('#7aa87a', '#5a8a62'), near: 'pines', fx: 'fireflies',
+    landmark: `<path d="M-200 200 Q-60 150 60 170 Q130 120 200 140 Q300 120 360 160 Q480 140 600 200 Z" fill="#4f8a5a"/><rect x="-200" y="200" width="800" height="40" fill="#3f7a4a"/>
+      <rect x="150" y="90" width="110" height="60" fill="#f7f4ee" stroke="#d8d0c8"/>${arches(154, 256, 128, 16, 7, '#9ab8d8')}
+      ${[[150, 56, 14], [260, 70, 12], [205, 40, 16], [230, 80, 10]].map(([x, top, w]) => `<rect x="${x - w / 2}" y="${top}" width="${w}" height="${150 - top}" fill="#f7f4ee" stroke="#d8d0c8"/><path d="M${x - w / 2 - 3} ${top} L${x} ${top - 30} L${x + w / 2 + 3} ${top} Z" fill="#4a6ab8"/><rect x="${x - 2}" y="${top + 12}" width="4" height="8" fill="#9ab8d8"/>`).join('')}
+      <path d="M140 90 L205 62 L270 90 Z" fill="#4a6ab8"/><path d="M180 150 V130 Q205 114 230 130 V150 Z" fill="#8a6a4a"/>` },
+
+  italy: { sky: ['#ffc98a', '#ffe0b0', '#fff4dc'], orb: 'sun', orbPos: [14, 24], far: hillsSVG('#d9b88a', '#c9a070'), near: 'cypress', fx: 'sparkle',
+    landmark: `<rect x="-200" y="200" width="800" height="40" fill="#c9a070"/>
+      <path d="M40 200 V110 Q150 80 260 110 L250 130 Q240 118 240 140 V200 Z" fill="#e0b98a"/>
+      ${[118, 148, 176].map((y, r) => arches(48, 236 - r * 4, y + 22, 22, 9, '#9a6a4a')).join('')}
+      <path d="M40 132 H240 M40 160 H240 M40 188 H240" stroke="#c99a6a" stroke-width="2"/>
+      <g transform="rotate(5 320 200)"><rect x="300" y="60" width="40" height="140" fill="#f7f1e6" stroke="#d8ccb8"/>${[80, 100, 120, 140, 160, 180].map(y => `<path d="M300 ${y} H340" stroke="#d8ccb8"/>${arches(302, 338, y, 14, 4, '#c9b89a')}`).join('')}<rect x="304" y="44" width="32" height="16" fill="#f7f1e6" stroke="#d8ccb8"/></g>` },
+
+  barcelona: { sky: ['#6ab0f0', '#a8d8f8', '#fff0d0'], orb: 'sun', orbPos: [80, 16], far: `SKY:${JSON.stringify({ fill: '#e8c0a0', windows: ['#fff6e0'], minH: 50, maxH: 110, winChance: .5 })}`, near: 'palms', fx: 'sparkle',
+    landmark: `<rect x="-200" y="200" width="800" height="40" fill="#d8b89a"/>
+      <rect x="120" y="120" width="160" height="80" fill="#c8a47a"/>${arches(126, 274, 196, 44, 5, '#8a6a4a')}
+      ${[[140, 50], [168, 26], [196, 10], [204, 12], [232, 26], [260, 50]].map(([x, top]) => `<path d="M${x - 11} 124 L${x - 9} ${top + 30} Q${x} ${top} ${x + 9} ${top + 30} L${x + 11} 124 Z" fill="#d9b48a" stroke="#a8845a"/>${[top + 44, top + 64, top + 84].filter(y => y < 118).map(y => `<ellipse cx="${x}" cy="${y}" rx="3" ry="5" fill="#8a6a4a"/>`).join('')}<circle cx="${x}" cy="${top + 4}" r="4" fill="#e8543f"/>`).join('')}
+      <path d="M200 60 v-26" stroke="#a8845a" stroke-width="2"/><path d="M194 40 h12" stroke="#a8845a" stroke-width="2"/>` },
+
+  egypt: { sky: ['#ff9a5a', '#ffc27a', '#ffe6b0'], orb: 'sun', orbPos: [74, 30], orbBig: true, far: '', near: 'none', fx: 'sand',
+    landmark: `<path d="M-200 200 Q200 184 600 200 V240 H-200 Z" fill="#e8b86a"/>
+      <path d="M60 200 L150 80 L240 200 Z" fill="#e0a85a"/><path d="M150 80 L240 200 L180 200 Z" fill="#c98a42"/>
+      <path d="M200 200 L270 110 L340 200 Z" fill="#e6b066"/><path d="M270 110 L340 200 L290 200 Z" fill="#c98a42"/>
+      <path d="M320 200 L360 150 L400 200 Z" fill="#dca05a"/>
+      <g transform="translate(60 196)"><path d="M0 0 H40 V-10 Q40 -20 30 -20 H10 V-30 Q10 -40 0 -40 Q-10 -40 -10 -30 V-8 Q-10 0 0 0 Z" fill="#c9924a"/><path d="M-10 -30 L-16 -18 H-4 Z" fill="#b8843a"/></g>
+      <g transform="translate(280 214)"><path d="M0 0 V-14 Q0 -24 10 -26 Q16 -36 24 -26 Q32 -30 34 -20 L40 -34 Q44 -38 46 -32 L42 -18 V0" stroke="#7a4a2a" stroke-width="4" fill="none"/><path d="M4 -16 Q18 -30 34 -18" fill="#9a6a3a"/></g>` },
+
+  tokyo: { sky: ['#2a2350', '#8a4a8a', '#ffb0c8'], orb: 'moon', orbPos: [16, 14], far: `SKY:${JSON.stringify({ fill: '#3a2a5a', windows: ['#ff7ac8', '#7af3ff', '#fff3a8'], minH: 70, maxH: 170, winChance: .45 })}`, near: 'lamps', fx: 'petals',
+    landmark: `<path d="M40 200 L150 90 Q160 84 170 90 L280 200 Z" fill="#7a8ab8" opacity=".75"/><path d="M150 90 Q160 84 170 90 L190 110 L176 106 L166 114 L154 106 L140 110 Z" fill="#fff"/>
+      <rect x="-200" y="200" width="800" height="40" fill="#3a2a4a"/>
+      <g transform="translate(300 200)"><path d="M-40 0 L-6 -150 L6 -150 L40 0 Z" fill="none" stroke="#e8432a" stroke-width="4"/>
+        ${[-30, -60, -95, -125].map((y, i) => `<path d="M${-40 + (i + 1) * 7} ${y} H${40 - (i + 1) * 7}" stroke="${i % 2 ? '#fff' : '#e8432a'}" stroke-width="5"/>`).join('')}
+        <path d="M-34 -20 L28 -80 M34 -20 L-28 -80 M-22 -80 L18 -130 M22 -80 L-18 -130" stroke="#e8432a" stroke-width="2"/><path d="M0 -150 V-186" stroke="#fff" stroke-width="3"/><rect x="-12" y="-104" width="24" height="10" fill="#ffd27a"/></g>
+      ${[[70, 180], [150, 190]].map(([x, y]) => `<g transform="translate(${x} ${y})"><path d="M0 12 V-10" stroke="#5a3a3a" stroke-width="4"/>${[[-14, -18, 16], [8, -22, 18], [-2, -32, 14], [16, -10, 12], [-18, -6, 11]].map(([dx, dy, r]) => `<circle cx="${dx}" cy="${dy}" r="${r}" fill="#ffb3cf"/>`).join('')}</g>`).join('')}` },
+
+  seoul: { sky: ['#1a1a4a', '#4a3a7a', '#a86a9a'], orb: 'moon', orbPos: [14, 16], far: `SKY:${JSON.stringify({ fill: '#2a2a5a', windows: ['#7af3ff', '#ffd98a', '#ff9ec4'], minH: 80, maxH: 200, winChance: .45 })}`, near: 'lamps', fx: 'petals',
+    landmark: `<path d="M220 200 Q300 100 400 200 Z" fill="#2a4a3a"/><rect x="-200" y="200" width="800" height="40" fill="#2a2a3a"/>
+      <g transform="translate(310 140)"><rect x="-3" y="-80" width="6" height="80" fill="#e8eef8"/><ellipse cx="0" cy="-84" rx="16" ry="8" fill="#e8eef8"/><rect x="-12" y="-94" width="24" height="10" rx="3" fill="#bfe0ff"/><path d="M0 -94 V-130" stroke="#e8eef8" stroke-width="2"/><circle cx="0" cy="-130" r="2.5" fill="#ff5f9a"/></g>
+      <g transform="translate(120 200)"><rect x="-70" y="-40" width="140" height="40" fill="#b8423a"/>${arches(-60, 60, 0, 30, 3, '#3a2020')}
+        <path d="M-96 -40 Q-80 -52 -60 -56 H60 Q80 -52 96 -40 Q70 -46 60 -46 H-60 Q-70 -46 -96 -40 Z" fill="#3a4a4a"/><path d="M-80 -58 Q-60 -80 0 -82 Q60 -80 80 -58 Z" fill="#4a5a5a"/>
+        <path d="M-60 -56 H60" stroke="#6ab08a" stroke-width="4"/></g>
+      ${[40, 80, 160, 200].map((x, i) => `<g transform="translate(${x} ${60 + (i % 2) * 8})"><path d="M0 -12 V0" stroke="#fff" stroke-width=".8"/><ellipse rx="7" ry="9" fill="${['#ff5f9a', '#ffc928', '#45c1ff', '#b56cff'][i]}" opacity=".9"/></g>`).join('')}
+      <path d="M20 48 Q120 70 220 48" stroke="#fff" stroke-width=".8" fill="none"/>` },
+
+  bali: { sky: ['#ff8a7a', '#ffb88a', '#ffe0a0'], orb: 'sun', orbPos: [50, 40], orbBig: true, far: '', near: 'palms', fx: 'fireflies',
+    landmark: `${[[150, '#6ab04a'], [165, '#5aa03e'], [180, '#4a9036'], [195, '#3f802e']].map(([y, c]) => `<path d="M-200 ${y} Q-100 ${y + 14} 0 ${y} Q100 ${y - 14} 200 ${y} Q300 ${y + 14} 400 ${y} Q500 ${y - 14} 600 ${y} V240 H-200 Z" fill="${c}"/><path d="M-200 ${y + 3} Q-100 ${y + 17} 0 ${y + 3} Q100 ${y - 11} 200 ${y + 3} Q300 ${y + 17} 400 ${y + 3} Q500 ${y - 11} 600 ${y + 3}" stroke="#9ad06a" stroke-width="1.4" fill="none"/>`).join('')}
+      ${[[150, 1], [250, -1]].map(([x, d]) => `<g transform="translate(${x} 200) scale(${d} 1)">${tiers(0, 0, -150, 64, 12, 8, '#6a5a52', '#3a302a')}<path d="M32 0 V-150 L${6} -150 V0 Z" fill="#6a5a52"/><path d="M32 0 L32 -150" stroke="#3a302a" stroke-width="2"/></g>`).join('')}
+      ${palm(60, 190, 1.4, '#2a3a2a')}${palm(345, 192, 1.2, '#2a3a2a')}
+      <g fill="#fff"><circle cx="186" cy="200" r="3"/><circle cx="214" cy="200" r="3"/></g><g fill="#ffd54a"><circle cx="186" cy="200" r="1.2"/><circle cx="214" cy="200" r="1.2"/></g>` },
+
+  la: { sky: ['#7a4aa8', '#ff7a9a', '#ffc27a'], orb: 'sun', orbPos: [80, 40], far: hillsSVG('#8a5a7a', '#6a4a6a'), near: 'palms', fx: 'sparkle',
+    landmark: `<path d="M-200 200 L-200 130 Q-100 96 0 110 Q80 60 170 96 Q260 50 400 110 Q500 100 600 130 V200 Z" fill="#9a6a7a"/>
+      <g font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="24" fill="#fff">${'LOS ANGELES'.split('').map((ch, i) => `<text x="${60 + i * 26}" y="${104 - Math.sin(i / 10 * Math.PI) * 18}" transform="rotate(-3 ${60 + i * 26} 100)">${ch}</text>`).join('')}</g>
+      <rect x="-200" y="200" width="800" height="40" fill="#3a2a4a"/><path d="M-200 214 H600" stroke="#ffd27a" stroke-width="2" stroke-dasharray="16 12"/>
+      ${[40, 110, 300, 370].map(x => `<g transform="translate(${x} 200)"><path d="M0 0 Q-2 -70 4 -130" stroke="#2a1a2a" stroke-width="3" fill="none"/>${[-160, -110, -60, -20, 20].map(a => `<path d="M4 -130 q${Math.cos(a * Math.PI / 180) * 12} ${Math.sin(a * Math.PI / 180) * 8} ${Math.cos(a * Math.PI / 180) * 22} ${Math.sin(a * Math.PI / 180) * 8 + 10}" stroke="#2a1a2a" stroke-width="2.4" fill="none"/>`).join('')}</g>`).join('')}` },
+
+  vegas: { sky: ['#12082a', '#2a1446', '#6a2a7a'], orb: null, far: `SKY:${JSON.stringify({ fill: '#1a0f33', windows: ['#ff7ac8', '#7af3ff', '#ffe27a'], minH: 120, maxH: 260, winChance: .55 })}`, near: 'lamps', fx: 'sparkle',
+    landmark: `<rect x="-200" y="200" width="800" height="40" fill="#1a1024"/>
+      <g transform="translate(330 200)"><rect x="-4" y="-160" width="8" height="160" fill="#c9c6d8"/><ellipse cx="0" cy="-160" rx="20" ry="9" fill="#c9c6d8"/><rect x="-16" y="-176" width="32" height="12" rx="4" fill="#7af3ff"/><path d="M0 -176 V-210" stroke="#c9c6d8" stroke-width="2"/></g>
+      <g transform="translate(215 200)"><rect x="-4" y="-46" width="8" height="46" fill="#c9c6d8"/>
+        <path d="M-92 -104 L0 -156 L92 -104 L0 -44 Z" fill="#fff" stroke="#e2242c" stroke-width="3"/>
+        ${Array.from({ length: 18 }, (_, i) => { const t = i / 18 * Math.PI * 2; const x = Math.cos(t) * 84, y = -100 + Math.sin(t) * 50; return `<circle class="bulb-v" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.2" fill="#ffd27a"/>`; }).join('')}
+        <text x="0" y="-122" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="700" fill="#e2242c">WELCOME TO</text>
+        <text x="0" y="-104" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-size="11" fill="#2a5ac9">Fabulous</text>
+        <text x="0" y="-84" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-size="13" font-weight="900" fill="#e2242c">LAS VEGAS</text>
+        <path d="M-7 -66 l7 -6 7 6" fill="#e2242c"/></g>` },
+};
+
+/** Build the DOM for every destination in DESTINATIONS (inserted before the glass glare). */
+function buildDestinations() {
+  const frame = $('#window-frame'), glare = $('.window-glare', frame);
+  Object.entries(DESTINATIONS).forEach(([key, d]) => {
+    const el = document.createElement('div');
+    el.className = 'scenery dest';
+    el.dataset.scene = key;
+    let far = '';
+    if (d.far === 'MOUNT') far = `<div class="track track-far" style="--speed:110s">${mountainsSVG() + mountainsSVG()}</div>`;
+    else if (typeof d.far === 'string' && d.far.startsWith('SKY:')) { const s = skylineSVG(JSON.parse(d.far.slice(4))); far = `<div class="track track-far" style="--speed:90s">${s + s}</div>`; }
+    else if (d.far) far = `<div class="track track-far" style="--speed:100s">${d.far + d.far}</div>`;
+    const nearSvg = d.near === 'pines' ? pinesSVG('#1b3a32', !!d.nearSnow) : (NEAR[d.near] || NEAR.none)();
+    const night = /^#(1|2|3|4)/.test(d.sky[0]);
+    el.innerHTML = `
+      <div class="sc-sky" style="background:linear-gradient(180deg, ${d.sky[0]} 0%, ${d.sky[1]} 55%, ${d.sky[2]} 100%)"></div>
+      ${night ? '<div class="dest-stars"></div>' : ''}
+      ${d.orb ? `<div class="dest-orb orb-${d.orb}${d.orbBig ? ' big' : ''}" style="left:${d.orbPos[0]}%;top:${d.orbPos[1]}%"></div>` : ''}
+      ${far}
+      <svg class="landmark" viewBox="-200 0 800 240" preserveAspectRatio="xMidYMax slice" aria-hidden="true">${d.landmark}</svg>
+      ${nearSvg ? `<div class="track track-near" style="--speed:9s">${nearSvg + nearSvg}</div>` : ''}
+      <div class="dest-fx fx-${d.fx || 'none'}"></div>`;
+    frame.insertBefore(el, glare);
+    // particles
+    const fx = $('.dest-fx', el), n = { snow: 34, petals: 22, sand: 30, stars: 30, rain: 40, sparkle: 18, fireflies: 16 }[d.fx] || 0;
+    for (let i = 0; i < n; i++) {
+      const p = document.createElement('i');
+      p.style.left = rand(0, 105) + '%';
+      p.style.top = d.fx === 'stars' || d.fx === 'sparkle' || d.fx === 'fireflies' ? rand(4, 80) + '%' : '-6%';
+      p.style.setProperty('--d', rand(d.fx === 'rain' ? .8 : 5, d.fx === 'rain' ? 1.4 : 11).toFixed(2) + 's');
+      p.style.animationDelay = -rand(0, 11).toFixed(2) + 's';
+      fx.appendChild(p);
+    }
+    if (night) { const st = $('.dest-stars', el); for (let i = 0; i < 40; i++) { const s = document.createElement('span'); s.className = 'star'; s.style.left = rand(0, 100) + '%'; s.style.top = rand(0, 55) + '%'; s.style.setProperty('--t', rand(1.5, 4) + 's'); st.appendChild(s); } }
+  });
+}
+
 
 /** Random building silhouettes with lit windows, as an SVG string. */
 function skylineSVG({ fill, windows, minH, maxH, roof = 'flat', roofFill = fill, winChance = .45 }) {
@@ -1339,7 +1573,10 @@ const fillTrack = (track, html) => { track.innerHTML = html + html; };
 
 function initDrive() {
   const section = $('#drive');
+  buildDestinations();                                   // adds all the world-tour stops
   const sceneryEls = $$('.scenery', section);
+  section.style.height = (DRIVE_SCENES.length * 70 + 100) + 'vh';   // ~70vh of scrolling per stop
+  const kicker = $('.drive-caption .kicker', section);
   const caption = $('.drive-caption', section);
   const titleEl = $('#drive-title'), subEl = $('#drive-sub');
   const stepsEl = $('#drive-steps');
@@ -1435,10 +1672,14 @@ function initDrive() {
     section.style.setProperty('--p', p.toFixed(3));
     hint.classList.toggle('hide', p > .04);
     const idx = Math.min(DRIVE_SCENES.length - 1, Math.floor(p * DRIVE_SCENES.length));
+    section.style.setProperty('--lp', clamp(p * DRIVE_SCENES.length - idx, 0, 1).toFixed(3));   // progress within this stop
     if (idx === current) return;
     current = idx;
     sceneryEls.forEach(el => el.classList.toggle('active', el.dataset.scene === DRIVE_SCENES[idx].key));
     $$('.drive-step', stepsEl).forEach((b, i) => b.classList.toggle('active', i === idx));
+    const chip = $$('.drive-step', stepsEl)[idx];
+    if (chip) stepsEl.scrollTo({ left: chip.offsetLeft - stepsEl.clientWidth / 2 + chip.offsetWidth / 2, behavior: 'smooth' });
+    if (kicker) kicker.textContent = `Chapter 3 · Midnight Drive · stop ${idx + 1} of ${DRIVE_SCENES.length}`;
     titleEl.textContent = DRIVE_SCENES[idx].title;
     subEl.textContent = DRIVE_SCENES[idx].sub;
     replayClass(caption, 'swap', 800);
